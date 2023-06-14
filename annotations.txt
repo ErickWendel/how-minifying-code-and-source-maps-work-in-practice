@@ -1,0 +1,4 @@
+https://web.dev/source-maps/
+https://evanw.github.io/source-map-visualization/
+https://umaar.com/dev-tips/96-resolve-variable-names/ (only on firefox)
+https://sourcemaps.info/spec.html
