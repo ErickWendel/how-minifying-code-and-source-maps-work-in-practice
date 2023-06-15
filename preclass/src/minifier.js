@@ -2,88 +2,85 @@ import * as acorn from 'acorn';
 import escodegen from 'escodegen';
 
 export default class Minifier {
-    constructor(originalCode) {
-        this.originalCode = originalCode;
-        this.nameMap = new Map();
-        this.minifiedCode = '';
-        this.alphabet = 'abcdefghijklmnopqrstuvwxyz';
-        this.currentAlphabetIndex = 0;
+    #nameMap = new Map();
+    // limited to 26 characters
+    #alphabet = Array.from('abcdefghijklmnopqrstuvwxyz');
+
+    #generateName(oldName = '') {
+        // If the name exists in the nameMap, return the corresponding new name
+        if (this.#nameMap.has(oldName)) {
+            return this.#nameMap.get(oldName);
+        }
+        // Throw an error if the alphabet is empty
+        if (!this.#alphabet.length) {
+            throw new Error('Alphabet is empty - we expect at most 26 keyword to be used in the code');
+        }
+
+        // Shift the next character from the alphabet
+        return this.#alphabet.shift();
     }
 
-    traverseAST() {
-        const generateName = () => {
-            let newName = '';
-            if (this.currentAlphabetIndex < this.alphabet.length) {
-                newName = this.alphabet[this.currentAlphabetIndex];
-            } else {
-                const suffix = Math.floor(this.currentAlphabetIndex / this.alphabet.length);
-                newName = this.alphabet[suffix - 1] + this.alphabet[this.currentAlphabetIndex % this.alphabet.length];
-            }
-            this.currentAlphabetIndex++;
-            return newName;
+    #handleDeclaration(declaration) {
+        const oldName = declaration.name;
+        const newName = this.#generateName(oldName);
+        this.#nameMap.set(oldName, newName);
+        declaration.name = newName;
+    }
+
+    #handleVariableDeclaration(node) {
+        for (const declaration of node.declarations) {
+            this.#handleDeclaration(declaration.id);
+        }
+    }
+
+    #handleFunctionDeclaration(node) {
+        this.#handleDeclaration(node.id);
+        for (const param of node.params) {
+            this.#handleDeclaration(param);
+        }
+    }
+
+    #handleIdentifier(node) {
+        const oldName = node.name;
+        const newName = this.#nameMap.get(oldName);
+        if (newName) {
+            node.name = newName;
+        }
+    }
+
+
+    #traverse(node) {
+        const handlers = {
+            VariableDeclaration: this.#handleVariableDeclaration.bind(this),
+            FunctionDeclaration: this.#handleFunctionDeclaration.bind(this),
+            Identifier: this.#handleIdentifier.bind(this),
         };
 
-        const traverse = (node) => {
-            const handlers = {
-                VariableDeclaration: (node) => {
-                    for (const declaration of node.declarations) {
-                        const oldName = declaration.id.name;
-                        const newName = this.nameMap.get(oldName) || generateName();
-                        this.nameMap.set(oldName, newName);
-                        declaration.id.name = newName;
-                    }
-                },
-                FunctionDeclaration: (node) => {
-                    const oldName = node.id.name;
-                    const newName = this.nameMap.get(oldName) || generateName();
-                    this.nameMap.set(oldName, newName);
-                    node.id.name = newName;
+        const handler = handlers[node.type];
+        if (handler) {
+            handler.call(this, node);
+        }
 
-                    for (const param of node.params) {
-                        const oldParamName = param.name;
-                        const newParamName = this.nameMap.get(oldParamName) || generateName();
-                        this.nameMap.set(oldParamName, newParamName);
-                        param.name = newParamName;
-                    }
-                },
-                Identifier: (node) => {
-                    const oldName = node.name;
-                    const newName = this.nameMap.get(oldName);
-                    if (newName) {
-                        node.name = newName;
-                    }
-                },
-            };
-
-            const handler = handlers[node.type];
-            if (handler) {
-                handler(node);
+        for (const key in node) {
+            if (typeof node[key] === 'object' && node[key] !== null) {
+                this.#traverse(node[key]);
             }
+        }
+    }
 
-            for (const key in node) {
-                if (typeof node[key] === 'object' && node[key] !== null) {
-                    traverse(node[key]);
-                }
-            }
-        };
-
+    traverseAST(originalCode) {
         // Parse the original code into an AST
-        const ast = acorn.parse(this.originalCode, { ecmaVersion: 2022 });
+        const ast = acorn.parse(originalCode, { ecmaVersion: 2022 });
 
         // Traverse the AST and minify names
-        traverse(ast);
+        this.#traverse(ast);
 
         // Generate the minified code
-        this.minifiedCode = escodegen.generate(ast, { format: { compact: true, space: false } });
+        const minifiedCode = escodegen.generate(ast, { format: { compact: true, space: false } });
 
-        return this;
-    }
-
-    getMinifiedCode() {
-        return this.minifiedCode;
-    }
-
-    getNameMap() {
-        return this.nameMap;
+        return {
+            minifiedCode,
+            nameMap: this.#nameMap,
+        };
     }
 }

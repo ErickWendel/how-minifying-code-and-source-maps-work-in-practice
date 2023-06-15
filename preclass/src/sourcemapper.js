@@ -1,71 +1,55 @@
 import { SourceMapGenerator } from 'source-map';
-import { basename } from 'path';
 
 export default class SourceMapper {
-    constructor({ originalCode, nameMap, fileName, minifiedCode }) {
-      this.originalCode = originalCode;
-      this.nameMap = nameMap;
-      this.fileName = fileName;
-      this.minifiedCode = minifiedCode;
-      this.sourceMap = new SourceMapGenerator({ file: basename(this.getMinifiedFilePath()) });
-    }
+  #minifiedLocalFilePath
+  #sourceMap
 
-    getMinifiedFilePath() {
-      const name =this.fileName.replace('.js', '');
-      return `${name}.min.js`;
-    }
-
-    generateSourceMap() {
-      const findAllOccurrences = (str, substring) => {
-        const positions = [];
-        let position = 0;
-        while (position !== -1) {
-          position = str.indexOf(substring, position);
-          if (position !== -1) {
-            positions.push(getLineAndColumn(str, position));
-            position += substring.length;
-          }
-        }
-        return positions;
-      };
-
-      const getLineAndColumn = (str, position) => {
-        let line = 1;
-        let column = 0;
-        for (let i = 0; i < position; i++) {
-          if (str[i] === '\n') {
-            line++;
-            column = 0;
-          } else {
-            column++;
-          }
-        }
-        return { line, column };
-      };
-      const sourceContentFileName = basename(this.fileName);
-      for (const [originalName, minifiedName] of this.nameMap) {
-        const originalPositions = findAllOccurrences(this.originalCode, originalName);
-        const minifiedPositions = findAllOccurrences(this.minifiedCode, minifiedName);
-
-        originalPositions.forEach((originalPosition, index) => {
-          const minifiedPosition = minifiedPositions[index];
-          const mapping = {
-            original: { line: originalPosition.line, column: originalPosition.column },
-            generated: { line: minifiedPosition.line, column: minifiedPosition.column },
-            source: sourceContentFileName,
-            name: minifiedName,
-          };
-          this.sourceMap.addMapping(mapping);
-        });
-      }
-
-    //   this.sourceMap.file = // this.getMinifiedFilePath();
-      this.sourceMap.setSourceContent(sourceContentFileName, this.originalCode);
-
-      return this;
-    }
-
-    getSourceMap() {
-      return this.sourceMap;
-    }
+  constructor({ minifiedLocalFilePath }) {
+    this.#minifiedLocalFilePath = minifiedLocalFilePath;
+    this.#sourceMap = new SourceMapGenerator({ file: this.#minifiedLocalFilePath });
   }
+
+  #findAllOccurrences(str, substring) {
+    const positions = Array.from(str.matchAll(new RegExp(substring, 'g')), (match) =>
+      this.#getLineAndColumn(str, match.index)
+    );
+    return positions;
+  }
+
+  #getLineAndColumn(str, position) {
+    const lines = str.slice(0, position).split('\n');
+    const lineLength = lines.length;
+    const column = lines[lineLength - 1].length;
+    return { line: lineLength, column };
+  }
+
+  #addMappingToSourceMap({ originalPosition, minifiedPosition, minifiedName }) {
+    const mapping = {
+      original: { line: originalPosition.line, column: originalPosition.column },
+      generated: { line: minifiedPosition.line, column: minifiedPosition.column },
+      source: this.#minifiedLocalFilePath,
+      name: minifiedName,
+    };
+    this.#sourceMap.addMapping(mapping);
+  }
+
+  generateSourceMap({ originalCode, nameMap, minifiedCode }) {
+    for (const [originalName, minifiedName] of nameMap) {
+      const originalPositions = this.#findAllOccurrences(originalCode, originalName);
+      const minifiedPositions = this.#findAllOccurrences(minifiedCode, minifiedName);
+
+      originalPositions.forEach((originalPosition, index) => {
+        const minifiedPosition = minifiedPositions[index];
+        this.#addMappingToSourceMap({
+          originalPosition,
+          minifiedPosition,
+          minifiedName
+        });
+      });
+    }
+
+    this.#sourceMap.setSourceContent(this.#minifiedLocalFilePath, originalCode);
+
+    return this.#sourceMap.toString()
+  }
+}
