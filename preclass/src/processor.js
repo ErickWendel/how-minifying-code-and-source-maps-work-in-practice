@@ -11,7 +11,6 @@ export default class Processor {
     static #generateMinifiedCode({ originalCode, minifiedFilePath, minifiedLocalFilePath }) {
         const minifier = new Minifier();
         const minifiedCodeAndNameMap = minifier.traverseAST(originalCode);
-
         const sourceMapPath = `${minifiedLocalFilePath}.map`;
         const sourceMapUrl = `\n//# sourceMappingURL=${sourceMapPath}`;
 

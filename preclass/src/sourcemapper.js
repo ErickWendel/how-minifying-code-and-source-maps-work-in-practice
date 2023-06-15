@@ -1,55 +1,81 @@
 import { SourceMapGenerator } from 'source-map';
+import * as acorn from 'acorn';
+import ASTHelper from './ast-helper.js';
 
 export default class SourceMapper {
   #minifiedLocalFilePath
   #sourceMap
-
+  #minifiedItems = new Map();
   constructor({ minifiedLocalFilePath }) {
     this.#minifiedLocalFilePath = minifiedLocalFilePath;
     this.#sourceMap = new SourceMapGenerator({ file: this.#minifiedLocalFilePath });
   }
 
-  #findAllOccurrences(str, substring) {
-    const positions = Array.from(str.matchAll(new RegExp(substring, 'g')), (match) =>
-      this.#getLineAndColumn(str, match.index)
-    );
-    return positions;
+  #handleDeclaration({ loc: { start }, name }) {
+    if (this.#minifiedItems.has(name)) {
+      const nameMap = this.#minifiedItems.get(name)
+      nameMap.positions.push(start)
+      this.#minifiedItems.set(name, nameMap);
+      return;
+    }
+
+    this.#minifiedItems.set(name, { name, positions: [start] });
   }
 
-  #getLineAndColumn(str, position) {
-    const lines = str.slice(0, position).split('\n');
-    const lineLength = lines.length;
-    const column = lines[lineLength - 1].length;
-    return { line: lineLength, column };
-  }
+  #traverse(minifiedAST) {
+    const astHelper = new ASTHelper();
+    astHelper
+      .setVariableDeclarationHook((node) => {
+        for (const declaration of node.declarations) {
+          this.#handleDeclaration(declaration.id);
+        }
+      })
+      .setFunctionDeclarationHook((node) => {
+        this.#handleDeclaration(node.id);
+        for (const param of node.params) {
+          this.#handleDeclaration(param);
+        }
+      })
+      .setIdentifierHook((node) => {
+        const oldName = node.name;
+        const name = this.#minifiedItems.get(oldName);
+        if (!name) return;
 
-  #addMappingToSourceMap({ originalPosition, minifiedPosition, minifiedName }) {
-    const mapping = {
-      original: { line: originalPosition.line, column: originalPosition.column },
-      generated: { line: minifiedPosition.line, column: minifiedPosition.column },
-      source: this.#minifiedLocalFilePath,
-      name: minifiedName,
-    };
-    this.#sourceMap.addMapping(mapping);
+        this.#handleDeclaration(node);
+      })
+      .traverse(minifiedAST);
   }
 
   generateSourceMap({ originalCode, nameMap, minifiedCode }) {
-    for (const [originalName, minifiedName] of nameMap) {
-      const originalPositions = this.#findAllOccurrences(originalCode, originalName);
-      const minifiedPositions = this.#findAllOccurrences(minifiedCode, minifiedName);
-
-      originalPositions.forEach((originalPosition, index) => {
-        const minifiedPosition = minifiedPositions[index];
-        this.#addMappingToSourceMap({
-          originalPosition,
-          minifiedPosition,
-          minifiedName
-        });
-      });
-    }
-
-    this.#sourceMap.setSourceContent(this.#minifiedLocalFilePath, originalCode);
+    const ast = acorn.parse(minifiedCode, { ecmaVersion: 2022, locations: true });
+    this.#traverse(ast);
+    this.#generateSourceMapData({ nameMap, originalCode });
 
     return this.#sourceMap.toString()
   }
+
+  #generateSourceMapData({ nameMap, originalCode }) {
+    const originalItems = [...nameMap.values()];
+    this.#sourceMap.setSourceContent(this.#minifiedLocalFilePath, originalCode);
+
+    originalItems.forEach(({ newName, positions }) => {
+      const minifiedPositions = this.#minifiedItems.get(newName).positions
+      // workaround
+      minifiedPositions.shift();
+
+      minifiedPositions.forEach((minifiedPosition, index) => {
+        const originalPosition = positions[index];
+
+        const mapping = {
+          original: originalPosition,
+          generated: minifiedPosition,
+          source: this.#minifiedLocalFilePath,
+          name: newName,
+        };
+
+        this.#sourceMap.addMapping(mapping);
+      });
+    });
+  }
+
 }

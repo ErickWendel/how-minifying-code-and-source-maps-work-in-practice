@@ -1,15 +1,15 @@
 import * as acorn from 'acorn';
 import escodegen from 'escodegen';
-
+import ASTHelper from './ast-helper.js';
 export default class Minifier {
     #nameMap = new Map();
     // limited to 26 characters
     #alphabet = Array.from('abcdefghijklmnopqrstuvwxyz');
 
-    #generateName(oldName = '') {
+    #generateNameIfNotExists(oldName = '') {
         // If the name exists in the nameMap, return the corresponding new name
         if (this.#nameMap.has(oldName)) {
-            return this.#nameMap.get(oldName);
+            return this.#nameMap.get(oldName).name;
         }
         // Throw an error if the alphabet is empty
         if (!this.#alphabet.length) {
@@ -20,54 +20,65 @@ export default class Minifier {
         return this.#alphabet.shift();
     }
 
+    #updateNameMap(oldName, newName, { loc: { start } }) {
+        if (this.#nameMap.has(oldName)) {
+            const nameMap = this.#nameMap.get(oldName)
+            nameMap.positions.push(start)
+            this.#nameMap.set(oldName, nameMap);
+            return;
+        }
+
+        this.#nameMap.set(oldName, { newName, oldName, positions: [start] });
+    }
+
     #handleDeclaration(declaration) {
         const oldName = declaration.name;
-        const newName = this.#generateName(oldName);
-        this.#nameMap.set(oldName, newName);
+        const newName = this.#generateNameIfNotExists(oldName);
+
+        this.#updateNameMap(oldName, newName, declaration);
         declaration.name = newName;
     }
 
-    #traverse(node) {
-        const handlers = {
-            VariableDeclaration: (node) => {
+    #traverse(minifiedAST) {
+        const astHelper = new ASTHelper();
+        astHelper
+            .setVariableDeclarationHook((node) => {
                 for (const declaration of node.declarations) {
                     this.#handleDeclaration(declaration.id);
                 }
-            },
-            FunctionDeclaration: (node) => {
+            })
+            .setFunctionDeclarationHook((node) => {
                 this.#handleDeclaration(node.id);
                 for (const param of node.params) {
                     this.#handleDeclaration(param);
                 }
-            },
-            Identifier: (node) => {
+            })
+            .setIdentifierHook((node) => {
                 const oldName = node.name;
-                const newName = this.#nameMap.get(oldName);
-                if (newName) {
-                    node.name = newName;
-                }
-            },
-        };
+                const name = this.#nameMap.get(oldName)?.newName;
+                if (!name) return;
 
-        handlers[node.type]?.call(this, node);
-        for (const key in node) {
-            if (typeof node[key] !== 'object') continue
-            this.#traverse(node[key]);
-        }
+                this.#updateNameMap(oldName, name, node);
+                node.name = name;
+            })
+            .traverse(minifiedAST);
     }
 
     traverseAST(originalCode) {
         // Parse the original code into an AST
-        const ast = acorn.parse(originalCode, { ecmaVersion: 2022 });
+        const ast = acorn.parse(originalCode, { ecmaVersion: 2022, locations: true });
+        const originalAST = structuredClone(ast);
+        const minifiedAST = structuredClone(ast);
 
-        // Traverse the AST and minify names
-        this.#traverse(ast);
+        this.#traverse(minifiedAST);
 
         // Generate the minified code
-        const minifiedCode = escodegen.generate(ast, { format: { compact: true, space: false } });
+        const minifiedCode = escodegen.generate(minifiedAST, { format: { compact: true, space: false } });
 
         return {
             minifiedCode,
+            originalAST,
+            minifiedAST,
             nameMap: this.#nameMap,
         };
     }
