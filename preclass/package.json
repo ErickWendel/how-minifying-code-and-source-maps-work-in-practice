@@ -8,11 +8,14 @@
     "clean": "rm -rf **/index.min*",
     "minify": "npm run clean && node index.js public/index.js",
     "minify-and-run": "npm run minify && npm run start",
-    "start": "node index.min.js"
+    "start": "node public/index.min.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": "18"
+  },
   "dependencies": {
     "acorn": "^8.8.2",
     "escodegen": "^2.0.0",

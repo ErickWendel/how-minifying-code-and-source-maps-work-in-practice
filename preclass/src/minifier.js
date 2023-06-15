@@ -27,44 +27,32 @@ export default class Minifier {
         declaration.name = newName;
     }
 
-    #handleVariableDeclaration(node) {
-        for (const declaration of node.declarations) {
-            this.#handleDeclaration(declaration.id);
-        }
-    }
-
-    #handleFunctionDeclaration(node) {
-        this.#handleDeclaration(node.id);
-        for (const param of node.params) {
-            this.#handleDeclaration(param);
-        }
-    }
-
-    #handleIdentifier(node) {
-        const oldName = node.name;
-        const newName = this.#nameMap.get(oldName);
-        if (newName) {
-            node.name = newName;
-        }
-    }
-
-
     #traverse(node) {
         const handlers = {
-            VariableDeclaration: this.#handleVariableDeclaration.bind(this),
-            FunctionDeclaration: this.#handleFunctionDeclaration.bind(this),
-            Identifier: this.#handleIdentifier.bind(this),
+            VariableDeclaration: (node) => {
+                for (const declaration of node.declarations) {
+                    this.#handleDeclaration(declaration.id);
+                }
+            },
+            FunctionDeclaration: (node) => {
+                this.#handleDeclaration(node.id);
+                for (const param of node.params) {
+                    this.#handleDeclaration(param);
+                }
+            },
+            Identifier: (node) => {
+                const oldName = node.name;
+                const newName = this.#nameMap.get(oldName);
+                if (newName) {
+                    node.name = newName;
+                }
+            },
         };
 
-        const handler = handlers[node.type];
-        if (handler) {
-            handler.call(this, node);
-        }
-
+        handlers[node.type]?.call(this, node);
         for (const key in node) {
-            if (typeof node[key] === 'object' && node[key] !== null) {
-                this.#traverse(node[key]);
-            }
+            if (typeof node[key] !== 'object') continue
+            this.#traverse(node[key]);
         }
     }
 
