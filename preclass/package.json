@@ -3,9 +3,10 @@
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "clean": "rm -rf index.min*",
-    "minify": "npm run clean && node minify.js index.js",
+    "minify": "npm run clean && node index.js public/index.js",
     "minify-and-run": "npm run minify && npm run start",
     "start": "node index.min.js"
   },
