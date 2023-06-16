@@ -1,5 +1,6 @@
 https://web.dev/source-maps/
 https://evanw.github.io/source-map-visualization/
+https://sokra.github.io/source-map-visualization/ (test on this)
 https://umaar.com/dev-tips/96-resolve-variable-names/ (only on firefox)
 https://sourcemaps.info/spec.html
 
@@ -70,6 +71,7 @@ processor
         console.log({ minifiedCodeAndNameMap })
 minifier
     #nameMap = new Map();
+    // put all alphabet both upper and lower case in an array
     #alphabet
 
     #generateNameIfNotExists
