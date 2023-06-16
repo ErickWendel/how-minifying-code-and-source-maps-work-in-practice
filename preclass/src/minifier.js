@@ -66,19 +66,15 @@ export default class Minifier {
 
     traverseAST(originalCode) {
         // Parse the original code into an AST
-        const ast = acorn.parse(originalCode, { ecmaVersion: 2022, locations: true });
-        const originalAST = structuredClone(ast);
-        const minifiedAST = structuredClone(ast);
+        const originalAST = acorn.parse(originalCode, { ecmaVersion: 2022, locations: true });
 
-        this.#traverse(minifiedAST);
+        this.#traverse(originalAST);
 
         // Generate the minified code
-        const minifiedCode = escodegen.generate(minifiedAST, { format: { compact: true, space: false } });
+        const minifiedCode = escodegen.generate(originalAST, { format: { compact: true, space: false } });
 
         return {
             minifiedCode,
-            originalAST,
-            minifiedAST,
             nameMap: this.#nameMap,
         };
     }
