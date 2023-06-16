@@ -156,7 +156,7 @@ and visualize files
 > notice that variables are not being mapped
 -> firefox -> check Map
 -> debug code
-
+change the name to profession to make sure strings wont conflict with text
 END :)
 
 
