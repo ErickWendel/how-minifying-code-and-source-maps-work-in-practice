@@ -1,4 +1,5 @@
 https://web.dev/source-maps/
+https://web.dev/source-maps/#understanding-the-source-map
 https://evanw.github.io/source-map-visualization/
 https://sokra.github.io/source-map-visualization/ (test on this)
 https://umaar.com/dev-tips/96-resolve-variable-names/ (only on firefox)
@@ -107,6 +108,7 @@ touch index.html
 run -> should run in the browser
 
 -> pause announcement
+show: https://web.dev/source-maps/#understanding-the-source-map
 
 npm i source-map@0.7.4
 

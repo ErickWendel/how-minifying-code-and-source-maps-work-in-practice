@@ -1,0 +1,24 @@
+{
+  "name": "recorded",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "clean": "rm -rf **/index.min*",
+    "minifify": "npm run clean && node src/index.js public/index.js",
+    "minifify-and-run": "npm run minifify && npm start",
+    "start": "node public/index.min.js"
+  },
+  "keywords": [],
+  "engines": {
+    "node": "18"
+  },
+  "author": "erickwendel",
+  "license": "ISC",
+  "dependencies": {
+    "acorn": "^8.8.2",
+    "escodegen": "^2.0.0",
+    "source-map": "^0.7.4"
+  }
+}
