@@ -3,8 +3,8 @@ import escodegen from 'escodegen';
 import ASTHelper from './ast-helper.js';
 export default class Minifier {
     #nameMap = new Map();
-    // limited to 26 characters
-    #alphabet = Array.from('abcdefghijklmnopqrstuvwxyz');
+    // limit the alphabet to 52 characters
+    #alphabet = Array.from('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
     #generateNameIfNotExists(oldName = '') {
         // If the name exists in the nameMap, return the corresponding new name
@@ -13,7 +13,7 @@ export default class Minifier {
         }
         // Throw an error if the alphabet is empty
         if (!this.#alphabet.length) {
-            throw new Error('Alphabet is empty - we expect at most 26 keyword to be used in the code');
+            throw new Error('Alphabet is empty - we expect at most 52 keyword to be used in the code');
         }
 
         // Shift the next character from the alphabet
