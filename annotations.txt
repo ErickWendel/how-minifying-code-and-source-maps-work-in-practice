@@ -102,6 +102,9 @@ processor
     generateMinifiedCode
         all
 run -> it should generate minified file
+touch index.html
+    all
+run -> should run in the browser
 
 -> pause announcement
 
@@ -125,4 +128,36 @@ processor
         });
         console.log()
 sourcemapper.js
+    generateSourceMap
+        ast
+> run should show minifiedcode ast
+    handleDeclaration
+    #traverse
+    generateSourceMap
+        traverse
+    console.log minifiedItems
+> run should printout map
+    generateSourceMapData
+        all
+    generateSourceMap
+        return sourcemap
+processor
+    console.log(sourceMapContent)
+> should print sourcemapcontent
+processor
+    writeFileSync
+run
+    console.log
+> should generate files
+go to https://sokra.github.io/source-map-visualization/
+and visualize files
+
+> browser and check if the source map is working
+> notice that variables are not being mapped
+-> firefox -> check Map
+-> debug code
+
+END :)
+
+
 
