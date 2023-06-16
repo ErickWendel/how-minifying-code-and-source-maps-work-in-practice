@@ -24,7 +24,7 @@ export default class ASTHelper {
             Identifier: this.#identifierHook,
         };
 
-        handlers[node.type]?.(node);
+        handlers[node?.type]?.(node);
         for (const key in node) {
             if (typeof node[key] !== 'object') continue
             this.traverse(node[key]);
