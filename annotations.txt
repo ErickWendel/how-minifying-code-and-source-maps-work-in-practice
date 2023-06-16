@@ -2,3 +2,125 @@ https://web.dev/source-maps/
 https://evanw.github.io/source-map-visualization/
 https://umaar.com/dev-tips/96-resolve-variable-names/ (only on firefox)
 https://sourcemaps.info/spec.html
+
+# Script
+
+node -v > .nvmrc
+nvm use
+
+npm init -y
+    type: module
+    "engines": {
+        "node": "18"
+    },
+-> initial structure
+mkdir src
+    src
+        processor
+        minifier
+    index
+
+mkdir public
+    touch index.js
+        all
+processor.js
+    run
+        console.log(fileName)
+index.js
+    call processor.run
+package.json
+    "clean": "rm -rf **/index.min*",
+    "minify": "npm run clean && node index.js public/index.js",
+    "minify-and-run": "npm run minify && npm run start",
+    "start": "node public/index.min.js"
+
+npm i -g ntl
+ntl -> minify
+minifier.js
+   traverseAST(originalCode) {
+     console.log(originalCode)
+   }
+processor
+    readfile
+    minifiedFilePath
+    minfifiedLocalPath
+    #generateMinifiedCode
+        const minifier = new Minifier();
+        minifier.traverseAST(originalCode);
+npm i acorn@8.8.2 escodegen@2.0.0
+    acorn -> generate the AST
+    escodegen -> validate js code + remove spaces and breaklines
+
+minifier.js
+    traverseAST
+        ast
+        console.log JSON.stringify(ast)
+        show structure
+    #traverse(node) {}
+    traverseAST
+        this.#traverse(ast);
+         // Generate the minified code
+        const minifiedCode = escodegen.generate(ast, { format: { compact: true, space: false } });
+        return {
+            minifiedCode,
+        };
+processor
+    generateMinifiedCode
+        minifiedCodeAndNameMap
+        console.log({ minifiedCodeAndNameMap })
+minifier
+    #nameMap = new Map();
+    #alphabet
+
+    #generateNameIfNotExists
+    #handleDeclaration(declaration)
+        // all
+    traverseAST
+        call #handleDeclaration({ name: Date.now()})
+
+run -> should generate different names
+    updateNameMap
+    traverseAST
+        call updateNameMap
+run -> should save items
+touch ast-helper
+    all
+    comment VariableDeclaration
+minifier
+    import ast-helper
+    traverse
+        all
+run -> it should print minified code only on fnctions
+ast-helper
+        uncomment VariableDeclaration
+run -> it should print all minified code
+    traverseAST
+        return nameMap
+processor
+    generateMinifiedCode
+        all
+run -> it should generate minified file
+
+-> pause announcement
+
+npm i source-map@0.7.4
+
+touch sourcemapper.js
+    only signature
+    constructor({ minifiedLocalFilePath })
+    generateSourceMap({ originalCode, nameMap, minifiedCode }) {}
+processor
+    run
+        generateSourceMap
+    generateSourceMap
+         const sourceMapper = new SourceMapper({
+            minifiedLocalFilePath,
+        });
+        const sourceMapContent = sourceMapper.generateSourceMap({
+            originalCode,
+            nameMap,
+            minifiedCode,
+        });
+        console.log()
+sourcemapper.js
+
