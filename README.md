@@ -2,6 +2,8 @@
 
 ## About
 Welcome, this repo is part of my [**youtube video**](https://youtu.be/xDR55n9-Vf8) about **Creating your own UglifyJS - Minifying code and generating source maps from scratch (en-us)**
+
+
 First of all, leave your star 🌟 on this repo.
 
 Access our [**exclusive telegram channel**](https://t.me/ErickWendelContentHub) so I'll let you know about all the content I've been producing 
