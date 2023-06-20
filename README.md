@@ -1,7 +1,7 @@
 # how-minifying-code-and-source-maps-work-in-practice
 
 ## About
-Welcome, this repo is part of my [**youtube video**](https://youtu.be/xDR55n9-Vf8) about **Creating your own UglifyJS - Minifying code and generating source maps from scratch (en-us)**
+Welcome, this repo is part of my [**youtube video**](https://bit.ly/creating-your-own-uglifyjs) about **Creating your own UglifyJS - Minifying code and generating source maps from scratch (en-us)**
 
 
 First of all, leave your star 🌟 on this repo.
