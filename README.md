@@ -11,7 +11,8 @@ Access our [**exclusive telegram channel**](https://t.me/ErickWendelContentHub) 
 ## Complete source code
 - Access it in [app](./recorded/)
 
-![Creating your own UglifyJS from scratch-final](https://github.com/ErickWendel/how-minifying-code-and-source-maps-work-in-practice/assets/8060102/cccd7117-da15-46ff-987b-468fdebb7f26)
+![Creating your own UglifyJS from scratch-final](https://github.com/ErickWendel/how-minifying-code-and-source-maps-work-in-practice/assets/8060102/17627dbd-f401-4813-b3d6-a71c4286573d)
+
 
 
 ## Have fun!
